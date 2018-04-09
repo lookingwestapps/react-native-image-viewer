@@ -171,41 +171,63 @@ export default class ImageViewer extends React.Component<Props, State> {
     // 是否加载完毕了图片
     let imageLoaded = false
 
+    // This is a static image resource if the image.url
+    // is the result of the require() function
+    let isLocalFile = !isNaN(Number(image.url));
+
     // 如果图片是 file: 开头，说明是本地图片，默认已经加载完毕
-    if (image.url.startsWith(`file:`)) {
+    if ( (isLocalFile === true) || (image.url.startsWith(`file:`)) ) {
       imageLoaded = true
     }
 
     if (Platform.OS !== ("web" as any)) {
-      const prefetchImagePromise = Image.prefetch(image.url)
+      if (isLocalFile) {
+        // Getting the size of a static image resource is not trivial,
+        // you should pass the height and width in with the url like:
+        // const images = [
+        //   {
+        //     url: require('./4.jpg'),
+        //     width: 343,
+        //     height: 617,
+        //   }]
+        // If no size is set, use a default square size.
+        if (!image.width) {
+          image.width = 600
+        }
+        if (!image.height) {
+          image.height = 600
+        }
+      } else {
+        const prefetchImagePromise = Image.prefetch(image.url)
 
-      if (image.url.match(/^(http|https):\/\//)) {
-        prefetchImagePromise.then(
-          () => {
-            imageLoaded = true
-            if (sizeLoaded) {
-              imageStatus.status = "success"
+        if (image.url.match(/^(http|https):\/\//)) {
+          prefetchImagePromise.then(
+            () => {
+              imageLoaded = true
+              if (sizeLoaded) {
+                imageStatus.status = "success"
+                saveImageSize()
+              }
+            },
+            () => {
+              imageStatus.status = "fail"
               saveImageSize()
             }
-          },
-          () => {
-            imageStatus.status = "fail"
+          )
+        } else {
+          // 本地图片
+          imageLoaded = true
+          prefetchImagePromise
+            .then(() => {
+              //
+            })
+            .catch(() => {
+              //
+            })
+          if (sizeLoaded) {
+            imageStatus.status = "success"
             saveImageSize()
           }
-        )
-      } else {
-        // 本地图片
-        imageLoaded = true
-        prefetchImagePromise
-          .then(() => {
-            //
-          })
-          .catch(() => {
-            //
-          })
-        if (sizeLoaded) {
-          imageStatus.status = "success"
-          saveImageSize()
         }
       }
 
@@ -453,6 +475,20 @@ export default class ImageViewer extends React.Component<Props, State> {
     this.jumpToCurrentImage()
   }
 
+  getImageSourceForImage(imageUrl: any) {
+    console.log("getImageSourceForImage:", imageUrl);
+    if (!isNaN(imageUrl)) {
+      console.log("BDEUB !!")
+      return (
+        imageUrl
+      )
+    } else {
+      console.log("DEBUG 33333 !!")
+      return (
+        { uri: imageUrl }
+      )
+    }
+  }
   /**
    * 获得整体内容
    */
@@ -543,7 +579,7 @@ export default class ImageViewer extends React.Component<Props, State> {
             >
               <Image
                 style={{ ...this.styles.imageStyle, width, height }}
-                source={{ uri: image.url }}
+                source={this.getImageSourceForImage(image.url)}
                 {...image.props || {}}
               />
             </ImageZoom>
