@@ -476,14 +476,11 @@ export default class ImageViewer extends React.Component<Props, State> {
   }
 
   getImageSourceForImage(imageUrl: any) {
-    console.log("getImageSourceForImage:", imageUrl);
     if (!isNaN(imageUrl)) {
-      console.log("BDEUB !!")
       return (
         imageUrl
       )
     } else {
-      console.log("DEBUG 33333 !!")
       return (
         { uri: imageUrl }
       )
